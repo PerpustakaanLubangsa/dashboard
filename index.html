@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.7s ease;
+      overflow: hidden;
+    }
+
+    .card {
+      background-color: #111;
+      color: white;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+      animation: fadeInCard 1s ease forwards;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .card input {
+      width: 100%;
+      padding: 12px 16px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: #222;
+      color: white;
+      outline: none;
+      box-shadow: inset 0 0 5px #00ffcc;
+    }
+
+    @keyframes fadeInCard {
+      0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+
+    .hide {
+      animation: slideUp 0.6s ease forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h2>Masukkan Password</h2>
+    <input type="password" id="password" placeholder="••••••••" autofocus />
+  </div>
+
+  <script>
+    const correctPassword = "12341"; // Ganti sesuai kebutuhan
+    const input = document.getElementById("password");
+    const card = document.getElementById("card");
+
+    input.addEventListener("input", () => {
+      if (input.value.trim() === correctPassword) {
+        // Simpan akses login agar dashboard bisa terbuka
+        localStorage.setItem("akses_dashboard", "boleh");
+
+        // Animasikan keluar kartu dan ubah background
+        card.classList.add("hide");
+        document.body.style.backgroundColor = "#fff";
+
+        setTimeout(() => {
+          window.location.href = "perpustakaan.html";
+        }, 800);
+      }
+    });
+  </script>
+</body>
+</html>
