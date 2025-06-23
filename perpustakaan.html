@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Pustakawan</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      display: flex;
+      background-color: white;
+      overflow: hidden;
+    }
+
+    .left-bar {
+      width: 40px;
+      background-color: #27ae60;
+      border-top-right-radius: 20px;
+      border-bottom-right-radius: 20px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .right-bar {
+      width: 40px;
+      background-color: #27ae60;
+      transition: width 0.3s ease;
+      position: relative;
+      border-top-left-radius: 20px;
+      border-bottom-left-radius: 20px;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .right-bar.open {
+      width: 240px;
+    }
+
+    .sidebar-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 240px;
+      height: 100%;
+      background-color: #27ae60;
+      padding-top: 20px;
+      color: white;
+      display: none;
+      flex-direction: column;
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    .right-bar.open .sidebar-content {
+      display: flex;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .sidebar-content ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar-content li {
+      padding: 15px 20px;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 10px;
+      margin: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-content li:hover {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form input, form textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #e9f9ee;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin-right: 5px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .form-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .form-group input {
+      flex: 1;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .label-list {
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cek akses -->
+  <script>
+    if (localStorage.getItem("akses_dashboard") !== "boleh") {
+      window.location.href = "index.html";
+    }
+    window.addEventListener("beforeunload", () => {
+      localStorage.removeItem("akses_dashboard");
+    });
+  </script>
+
+  <div class="left-bar"></div>
+
+  <div class="main" id="mainContent">
+    <h1 id="sectionTitle">Catatan</h1>
+    <form id="dataForm">
+      <div id="formFields"></div>
+      <button type="submit">Simpan</button>
+    </form>
+    <div class="label-list" id="listLabel"></div>
+    <div id="dataList"></div>
+  </div>
+
+  <div class="right-bar" id="rightBar">
+    <div class="sidebar-content" id="sidebar">
+      <ul id="menuList">
+        <li onclick="loadSection('catatan')">Catatan</li>
+        <li onclick="loadSection('keterlambatan')">Keterlambatan</li>
+        <li onclick="loadSection('hutang')">Hutang</li>
+        <li onclick="window.location.href='data.html'">Statistik</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, addDoc, deleteDoc, doc
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXq4JgLjUXZ_tuH-nc5i8Dp3nHRanbcCU",
+      authDomain: "perpustakaanlubangsa.firebaseapp.com",
+      databaseURL: "https://perpustakaanlubangsa-default-rtdb.firebaseio.com",
+      projectId: "perpustakaanlubangsa",
+      storageBucket: "perpustakaanlubangsa.firebasestorage.app",
+      messagingSenderId: "14620616039",
+      appId: "1:14620616039:web:f6887aeb09e64f51a1bbc2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentSection = "catatan";
+    const form = document.getElementById("dataForm");
+    const list = document.getElementById("dataList");
+    const title = document.getElementById("sectionTitle");
+    const fields = document.getElementById("formFields");
+    const listLabel = document.getElementById("listLabel");
+
+    const fieldTemplates = {
+      catatan: () => {
+        title.textContent = "Catatan";
+        listLabel.textContent = "Daftar";
+        return `<div class="label">Tambah Catatan</div>
+                <textarea id="isi" placeholder="Isi Catatan" required></textarea>`;
+      },
+      keterlambatan: () => {
+        title.textContent = "Keterlambatan";
+        listLabel.textContent = "Daftar";
+        return `<div class="label">Tambah Keterlambatan</div>
+                <div class="form-group">
+                  <input type="text" id="nama" placeholder="Nama" required />
+                  <input type="text" id="buku" placeholder="Judul Buku" required />
+                  <input type="text" id="nominal" placeholder="Nominal" required oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+                </div>`;
+      },
+      hutang: () => {
+        title.textContent = "Hutang";
+        listLabel.textContent = "Daftar";
+        return `<div class="label">Tambah Hutang</div>
+                <div class="form-group">
+                  <input type="text" id="nama" placeholder="Nama" required />
+                  <input type="text" id="nominal" placeholder="Nominal" required oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+                  <input type="text" id="keterangan" placeholder="Keterangan" required />
+                </div>`;
+      }
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      let data = {};
+      if (currentSection === "catatan") {
+        data = { isi: form.isi.value.trim() };
+      } else if (currentSection === "keterlambatan") {
+        data = {
+          Nama: capitalizeWords(form.nama.value.trim()),
+          Buku: capitalizeWords(form.buku.value.trim()),
+          Nominal: formatRupiah(form.nominal.value.trim())
+        };
+      } else if (currentSection === "hutang") {
+        data = {
+          Nama: capitalizeWords(form.nama.value.trim()),
+          Nominal: formatRupiah(form.nominal.value.trim()),
+          Keterangan: capitalizeWords(form.keterangan.value.trim())
+        };
+      }
+      await addDoc(collection(db, currentSection), data);
+      form.reset();
+      loadData();
+    });
+
+    function formatRupiah(angka) {
+      return angka.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function capitalizeWords(str) {
+      return str.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    window.loadSection = (section) => {
+      currentSection = section;
+      fields.innerHTML = fieldTemplates[section]();
+      loadData();
+    };
+
+    async function loadData() {
+      list.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, currentSection));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = Object.entries(data).map(([k, v]) => `<b>${capitalizeWords(k)}:</b> ${v}<br>`).join("") +
+          `<br><button onclick="hapusData('${docSnap.id}')">Hapus</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    window.hapusData = async (id) => {
+      await deleteDoc(doc(db, currentSection, id));
+      loadData();
+    };
+
+    const rightBar = document.getElementById("rightBar");
+    const sidebar = document.getElementById("sidebar");
+
+    document.addEventListener("click", (e) => {
+      if (!rightBar.contains(e.target)) {
+        rightBar.classList.remove("open");
+      } else if (!rightBar.classList.contains("open")) {
+        rightBar.classList.add("open");
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      rightBar.classList.add("open");
+      let aktif = false;
+      sidebar.addEventListener("mouseenter", () => aktif = true);
+      document.addEventListener("keydown", () => aktif = true);
+      setTimeout(() => {
+        if (!aktif) rightBar.classList.remove("open");
+      }, 3000);
+    });
+
+    loadSection(currentSection);
+  </script>
+</body>
+</html>
