@@ -124,7 +124,8 @@
   <main>
     <h2 id="judul-bulan"></h2>
 
-    <div class="card" onclick="toggleSidebar()"><b>Total Pengunjung</b> <span id="total">0</span></div>
+    <!-- Tambahkan id pada card total -->
+    <div class="card" id="card-total" onclick="toggleSidebar()"><b>Total Pengunjung</b> <span id="total">0</span></div>
 
     <!-- PER BULAN -->
     <div id="section-bulanan">
@@ -160,14 +161,14 @@
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyBoNUK_1_Hfqa8yHUVZ_TWOc28zkImWPbw",
-  authDomain: "perpustakaandata-c7726.firebaseapp.com",
-  databaseURL: "https://perpustakaandata-c7726-default-rtdb.firebaseio.com",
-  projectId: "perpustakaandata-c7726",
-  storageBucket: "perpustakaandata-c7726.firebasestorage.app",
-  messagingSenderId: "1099434992232",
-  appId: "1:1099434992232:web:90fbc3e17c7a4ae1a051dd"
-};
+      apiKey: "AIzaSyBoNUK_1_Hfqa8yHUVZ_TWOc28zkImWPbw",
+      authDomain: "perpustakaandata-c7726.firebaseapp.com",
+      databaseURL: "https://perpustakaandata-c7726-default-rtdb.firebaseio.com",
+      projectId: "perpustakaandata-c7726",
+      storageBucket: "perpustakaandata-c7726.firebasestorage.app",
+      messagingSenderId: "1099434992232",
+      appId: "1:1099434992232:web:90fbc3e17c7a4ae1a051dd"
+    };
 
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
@@ -252,6 +253,8 @@
     async function loadMonth() {
       document.getElementById("section-bulanan").style.display = "block";
       document.getElementById("section-perbandingan").style.display = "none";
+      document.getElementById("card-total").style.display = "block"; // tampilkan kembali card total
+
       const m = months[curr];
       document.getElementById("judul-bulan").textContent = "Data Bulan " + m;
       const snapshot = await get(ref(db, "bulan/" + m));
@@ -286,6 +289,7 @@
       document.getElementById("judul-bulan").textContent = "Perbandingan Bulanan Total Pengunjung";
       document.getElementById("section-bulanan").style.display = "none";
       document.getElementById("section-perbandingan").style.display = "block";
+      document.getElementById("card-total").style.display = "none"; // sembunyikan card total
 
       const dataArr = await Promise.all(months.map(m => get(ref(db, "bulan/" + m)).then(s => s.exists() ? (s.val().total || 0) : 0)));
       chartPerbandingan.data.datasets[0].data = dataArr;
@@ -325,4 +329,5 @@
     loadMonth();
   </script>
 </body>
+
 </html>
